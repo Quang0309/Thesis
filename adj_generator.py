@@ -5,107 +5,58 @@ import numpy as np
 
 class Dictionary():
     def __init__(self):
-        self.mydict = {
-            "det": 1,
-            "amod": 2,
-            "nsubj": 3,
-            "advmod": 4,
-            "partmod": 5,
-            "prep_in": 6,
-            "ccomp": 7,
-            "prt": 8,
-            "dobj": 9,
-            "prep_of": 10,
-            "conj_and": 11,
-            "nn": 12,
-            "aux": 13,
-            "xcomp": 14,
-            "poss": 15,
-            "conj_or": 16,
-            "prep_during": 17,
-            "tmod": 18,
-            "root": 19,
-            "mark": 20,
-            "case": 21,
-            "nmod:to": 22,
-            "nmod:tmod": 23,
-            "ref": 24,
-            "acl:relcl": 25,
-            "advcl": 26,
-            "nmod:in": 27,
-            "compound": 28,
-            "nmod:with": 29,
-            "cc": 30,
-            "conj:and": 31,
-            "conj:or": 32,
-            "nummod": 33,
-            "nmod:of": 34,
-            "nmod:on": 35,
-            "compound:prt": 36,
-            "nmod:poss": 37,
-            "nsubjpass": 38,
-            "auxpass": 39,
-            "nmod:by": 40,
-            "nmod:from": 41,
-            "cop": 42,
-            "det:predet": 43,
-            "dep": 44,
-            "nmod:over": 45,
-            "nmod:for": 46,
-            "nmod:as": 47,
-            "expl": 48,
-            "appos": 49,
-            "nsubj:xsubj": 50,
-            "nmod:at": 51,
-            "nmod:above": 52,
-            "mwe": 53,
-            "nmod:like": 54,
-            "nmod:about": 55,
-            "acl": 56,
-            "nmod:inside": 57,
-            "parataxis": 58,
-            "nmod:out_of": 59,
-            "neg": 60,
-            "discourse": 61,
-            "nmod:than": 62,
-            "nmod:out": 63,
-            "nmod:that": 64,
-            "iobj": 65,
-            "nmod:per": 66,
-            "conj:but": 67,
-        }
+        self.mydict = {}
+        self.value = 1
+        with open("dependency.txt", "a+" ,encoding="utf8") as myFile:
+            myFile.seek(0)
+            lines = myFile.read()
+            for line in lines.split():
+                if (line not in ['\n', '\r\n']):
+                    line = line.replace("\n","")
+                    print(line)
+                    self.mydict[line] = self.value
+                    self.value += 1
+            print(self.mydict)    
+
         self.unvisited = []
 
     def getDependencyValue(self, dependency):
         value = self.mydict.get(dependency)
         if (value == None):
-            self.unvisited.append(dependency)
-            #raise ValueError('Dependency does not exist!!!')
+            self.mydict[dependency] = self.value
+            value = self.value
+            self.value += 1
+            with open("dependency.txt", "a+" ,encoding="utf8") as myFile:
+                dependency = dependency + '\n'
+                myFile.write(dependency)
+
+            return value
         else:
             return value
-
-    def getUnvisited(self):
-        return self.unvisited
 
 
 class AdjGenerator:
 
-    def __init__(self, fileName):
+    def __init__(self, fileName, numberOfWords=50, batchSize=80):
         self.fileName = fileName
         self.dictionary = Dictionary()
+        self.numberOfWords = numberOfWords
+        self.batchSize = batchSize
+        self.inputFile = open(self.fileName, "r", encoding="utf8")
 
     def generateMatrix(self):
-        inputFile = open(self.fileName, "r", encoding="utf8")
         arrayList = []
         arrayOfASentence = []
-        maxNumberOfWords = 0
 
-        for line in inputFile:
+        for line in self.inputFile:
             if (line in ['\n', '\r\n']):
                 print("Empty line! End of a sentence.")
                 if (arrayOfASentence != []):
                     arrayList.append(arrayOfASentence)
                 arrayOfASentence = []
+                if len(arrayList) == self.batchSize:
+                    print("Completed a batch !!!")
+                    break
             else:  # remove the line delimiter "\n" at the end of this line
                 line = line.replace("\n", "")
             print(line)
@@ -164,24 +115,16 @@ class AdjGenerator:
                                                secondNumber - 1]
                             print("array: ")
                             print(dependencyArray)
-                            arrayOfASentence.append(dependencyArray)
+                            arrayOfASentence.append(dependencyArray)                    
 
-                    if (firstNumber > maxNumberOfWords):
-                        maxNumberOfWords = firstNumber
-                    if (secondNumber > maxNumberOfWords):
-                        maxNumberOfWords = secondNumber
-
-        print("Max number of words in a sentence: ")
-        print(maxNumberOfWords)
-
-        print("Array list: ")
-        if (arrayOfASentence != []):
-            arrayList.append(arrayOfASentence)
-        print(arrayList)
+        # print("Array list: ")
+        # if (arrayOfASentence != []):
+        #     arrayList.append(arrayOfASentence)
+        # print(arrayList)
 
         # Shift the index of the word
         for index, arrayOfASentence in enumerate(arrayList):
-            shiftValue = index * maxNumberOfWords
+            shiftValue = index * self.numberOfWords
             for dependencyArray in arrayOfASentence:
                 dependencyArray[1] += shiftValue
                 dependencyArray[2] += shiftValue
@@ -193,36 +136,47 @@ class AdjGenerator:
         numberOfSentence = len(arrayList)
         print("Number of sentences:")
         print(numberOfSentence)
-        numberOfRows = numberOfSentence * maxNumberOfWords
+        numberOfRows = self.numberOfWords * self.batchSize
         print("Number of rows:")
         print(numberOfRows)
         labelMatrix = np.zeros((numberOfRows, numberOfRows))
         adjMatrix = np.zeros((numberOfRows, numberOfRows))
+        labelInverseMatrix = np.zeros((numberOfRows, numberOfRows))
+        adjInverseMatrix = np.zeros((numberOfRows, numberOfRows))
 
         # Fill value to this matrix
         for index, arrayOfASentence in enumerate(arrayList):
             for dependencyArray in arrayOfASentence:
                 labelMatrix[dependencyArray[1]
                             ][dependencyArray[2]] = dependencyArray[0]
+
+                labelInverseMatrix[dependencyArray[2]][dependencyArray[1]] = dependencyArray[0]
+                
                 adjMatrix[dependencyArray[1]][dependencyArray[2]] = 1
+
+                adjInverseMatrix[dependencyArray[2]][dependencyArray[1]] = 1
+
+
         print("Label matrix: ")
         print(labelMatrix)
+        print(labelMatrix.shape)
 
         print("Adj matrix: ")
         print(adjMatrix)
 
-        inputFile.close()
-        return labelMatrix, adjMatrix
+        return labelMatrix, adjMatrix, labelInverseMatrix, adjInverseMatrix
 
     def getUnvisited(self):
         return self.dictionary.getUnvisited()
 
 
-adjGenerator = AdjGenerator("train.en.out")
-label, adj = adjGenerator.generateMatrix()
+adjGenerator = AdjGenerator("train.en.out", batchSize=80)
+label, adj, labelInverse, adjInverse = adjGenerator.generateMatrix()
+for i in range (0, 1000):
+    label2, adj2, labelInverse2, adjInverse2 = adjGenerator.generateMatrix()
+
 print("Result: ")
 print(label)
 print(adj)
-
-print("Unvisited: ")
-print(adjGenerator.getUnvisited())
+print(labelInverse)
+print(adjInverse)
