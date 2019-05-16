@@ -38,10 +38,9 @@ class AdjGenerator:
         for line in inputFile:                           
             if (line in ['\n', '\r\n']):
                 print("Empty line! End of a sentence.")
-                            
-                arrayList.append(arrayOfASentence)
+                if (arrayOfASentence != []):
+                    arrayList.append(arrayOfASentence)
                 arrayOfASentence = []
-
             else:  # remove the line delimiter "\n" at the end of this line
                 line = line.replace("\n", "")
             print(line) 
@@ -57,9 +56,12 @@ class AdjGenerator:
             for index, character in enumerate(line):
                 #print(character)            
                 if (character == '('): # Dependency
-                    dependency = line[0:index]
-                    print("Dependency:")
-                    print(dependency)
+                    if (line[index + 1] != '('): # check the char next to the '('
+                        dependency = line[0:index]
+                        print("Dependency:")
+                        print(dependency)
+                    else:
+                        break
 
                 elif (character == '-'):
                     start = index + 1
@@ -93,7 +95,8 @@ class AdjGenerator:
         print(maxNumberOfWords)
 
         print("Array list: ")
-        arrayList.append(arrayOfASentence)
+        if (arrayOfASentence != []):
+            arrayList.append(arrayOfASentence)
         print(arrayList)
 
 
