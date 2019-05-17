@@ -44,4 +44,8 @@ det(rain-50, The-49)
 amod(rain-49, strongest-50)
 
 (())
+xcomp(rain-2, The-1)
+
 (())
+xcomp(rain-2, The-1)
+tmod(rain-49, strongest-49)

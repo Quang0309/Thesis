@@ -43,16 +43,19 @@ class AdjGenerator:
         self.numberOfWords = numberOfWords
         self.batchSize = batchSize
         self.inputFile = open(self.fileName, "r", encoding="utf8")
+        self.anchorForEachBach = open("AnchorForEachBach.txt", "w")
 
     def generateMatrix(self):
         arrayList = []
         arrayOfASentence = []
+        firstLineOfABatch = True
 
         for line in self.inputFile:
             if (line in ['\n', '\r\n']):
                 print("Empty line! End of a sentence.")
                 if (arrayOfASentence != []):
                     arrayList.append(arrayOfASentence)
+                    
                 arrayOfASentence = []
                 if len(arrayList) == self.batchSize:
                     print("Completed a batch !!!")
@@ -60,6 +63,10 @@ class AdjGenerator:
             else:  # remove the line delimiter "\n" at the end of this line
                 line = line.replace("\n", "")
             print(line)
+            if (firstLineOfABatch and line != '(())'):
+                text = line + '\n'
+                self.anchorForEachBach.write(text)
+                firstLineOfABatch = False
 
             start = 0
             end = 0
@@ -117,12 +124,21 @@ class AdjGenerator:
                             print(dependencyArray)
                             arrayOfASentence.append(dependencyArray)                    
 
-        # print("Array list: ")
-        # if (arrayOfASentence != []):
-        #     arrayList.append(arrayOfASentence)
-        # print(arrayList)
+        # Case when eof but not reach batch size
+        #   or, there's one empty line at the last of the file :) 
+        if (arrayOfASentence != []): 
+            print("Eof but not reach batch size...")
+            arrayList.append(arrayOfASentence)
+        arrayOfASentence = []
+        
+        numberOfSentence = len(arrayList)
+        print("Number of sentences:")
+        print(numberOfSentence)
+        if (numberOfSentence == 0):
+            print("EOF !!")
+            return None, None, None, None
 
-        # Shift the index of the word
+        # Shift the index of the word        
         for index, arrayOfASentence in enumerate(arrayList):
             shiftValue = index * self.numberOfWords
             for dependencyArray in arrayOfASentence:
@@ -133,9 +149,6 @@ class AdjGenerator:
         print(arrayList)
 
         # Create the matrix
-        numberOfSentence = len(arrayList)
-        print("Number of sentences:")
-        print(numberOfSentence)
         numberOfRows = self.numberOfWords * self.batchSize
         print("Number of rows:")
         print(numberOfRows)
@@ -166,17 +179,28 @@ class AdjGenerator:
 
         return labelMatrix, adjMatrix, labelInverseMatrix, adjInverseMatrix
 
-    def getUnvisited(self):
-        return self.dictionary.getUnvisited()
-
 
 adjGenerator = AdjGenerator("train.en.out", batchSize=80)
 label, adj, labelInverse, adjInverse = adjGenerator.generateMatrix()
-for i in range (0, 1000):
-    label2, adj2, labelInverse2, adjInverse2 = adjGenerator.generateMatrix()
-
 print("Result: ")
 print(label)
 print(adj)
 print(labelInverse)
 print(adjInverse)
+
+count = 1
+stop = False
+while (stop == False):
+    label2, adj2, labelInverse2, adjInverse2 = adjGenerator.generateMatrix()
+    if (label2 is None):
+        print("Done !!")
+        print("Count: ")
+        print(count)
+        stop = True
+    else: 
+        count += 1
+        print("Result 2:")
+        print(label2)
+        print(adj2)
+        print(labelInverse2)
+        print(adjInverse2)
