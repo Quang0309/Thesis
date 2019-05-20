@@ -83,7 +83,6 @@ class SimpleLSTMEncoder(FairseqEncoder):
         }
 
 
-
 import torch
 from fairseq.models import FairseqDecoder
 
@@ -174,8 +173,6 @@ class SimpleLSTMDecoder(FairseqDecoder):
         # Return the logits and ``None`` for the attention weights
         return x, None
 
-
-
 from fairseq.models import FairseqModel, register_model
 
 # Note: the register_model "decorator" should immediately precede the
@@ -253,8 +250,6 @@ class SimpleLSTMModel(FairseqModel):
     #     decoder_out = self.decoder(prev_output_tokens, encoder_out)
     #     return decoder_out
 
-
-
 from fairseq.models import register_model_architecture
 
 # The first argument to ``register_model_architecture()`` should be the name
@@ -266,7 +261,7 @@ from fairseq.models import register_model_architecture
 def tutorial_simple_lstm(args):
     # We use ``getattr()`` to prioritize arguments that are explicitly given
     # on the command-line, so that the defaults defined below are only used
-    # when no other value has been sp`ecified.
+    # when no other value has been specified.
     args.encoder_embed_dim = getattr(args, 'encoder_embed_dim', 256)
     args.encoder_hidden_dim = getattr(args, 'encoder_hidden_dim', 256)
     args.decoder_embed_dim = getattr(args, 'decoder_embed_dim', 256)
