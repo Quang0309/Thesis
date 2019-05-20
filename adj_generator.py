@@ -290,9 +290,9 @@ class AdjGenerator:
         numberOfSentence = len(arrayList)
         print("Number of sentences:")
         print(numberOfSentence)
-        if (numberOfSentence == 0):
-            print("EOF !!")
-            return None, None, None, None
+        # if (numberOfSentence == 0):
+        #     print("EOF !!")
+        #     return None, None, None, None
 
         # Shift the index of the word        
         for index, arrayOfASentence in enumerate(arrayList):
@@ -351,7 +351,7 @@ class AdjGenerator:
 
 
 adjGenerator = AdjGenerator("test.txt", numberOfWords=19, batchSize=80)
-label, adj, labelInverse, adjInverse = adjGenerator.generateMatrixFromIDs([1, 2, 6])
+label, adj, labelInverse, adjInverse = adjGenerator.generateMatrixFromIDs([80, 100, 10000])
 print("Result: ")
 print(label)
 print(adj)
