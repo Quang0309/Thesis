@@ -54,9 +54,10 @@ def collate(
     else:
         ntokens = sum(len(s['source']) for s in samples)
 
+    print(src_lengths[0].item())
     print("Here")
     print(id)
-    adjTensor, labelTensor, adjInverseTensor, labelInverseTensor = adj_generator.generateTensorsFromIDs(id)
+    adjTensor, labelTensor, adjInverseTensor, labelInverseTensor = adj_generator.generateTensorsFromIDs(id, src_lengths[0].item())
     print(adjTensor)
     
 
@@ -141,7 +142,7 @@ class LanguagePairDataset(FairseqDataset):
             name = 'valid.en.out'
         elif (split == 'test'):
             name = 'test.en.out'
-        self.adj_generator = AdjGenerator.AdjGenerator(name, numberOfWords=19, batchSize=80)
+        self.adj_generator = AdjGenerator.AdjGenerator(name, numberOfWords=50, batchSize=80)
 
     def __getitem__(self, index):
         tgt_item = self.tgt[index] if self.tgt is not None else None

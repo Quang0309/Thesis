@@ -62,7 +62,8 @@ class AdjGenerator:
         values = x[tuple(indices[i] for i in range(indices.shape[0]))]
         return sparse_tensortype(indices, values, x.size())
 
-    def generateTensorsFromIDs(self, ids):
+    def generateTensorsFromIDs(self, ids, numberOfWordsPerSentence):
+        self.numberOfWords = numberOfWordsPerSentence
         arrayList = []
         arrayOfIDs = []
         arrayOfASentence = []
