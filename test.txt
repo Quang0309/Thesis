@@ -1,6 +1,6 @@
 (())
-det(rain-3, The-1) 1
-amod(rain-3, strongest-2) 11
+det(rain-3, The-1) 
+amod(rain-3, strongest-2) 
 nsubj(shut-8, rain-3) 
 nsubj(snapped-16, rain-3)
 nsubj(closed-20, rain-3)
@@ -40,12 +40,12 @@ tmod(said-40, today-41)
 
 (())
 
-det(rain-50, The-49)
-amod(rain-49, strongest-50)
+det(rain-1, The-20)
+amod(rain-3, strongest-2)
 
 (())
-xcomp(rain-2, The-25)
+xcomp(rain-18, The-19)
 
 (())
 xcomp(rain-2, The-1)
-tmod(rain-49, strongest-49)
+tmod(rain-19, strongest-19)

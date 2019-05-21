@@ -1,1 +1,1 @@
-det(rain-3, The-1) 1
+det(rain-3, The-1) 

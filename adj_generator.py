@@ -197,15 +197,18 @@ class AdjGenerator:
 
     def generateMatrixFromIDs(self, ids):
         arrayList = []
+        arrayOfIDs = []
         arrayOfASentence = []
         firstLineOfABatch = True
-        indexOfSentence = 1
+        indexOfSentence = 0
+        
 
         for line in self.inputFile:
             if (line in ['\n', '\r\n']):
                 print("Empty line! End of a sentence.")
                 if (arrayOfASentence != []): 
                     if (indexOfSentence in ids):
+                        arrayOfIDs.append(indexOfSentence)
                         arrayList.append(arrayOfASentence)
                     
                     indexOfSentence += 1
@@ -217,6 +220,12 @@ class AdjGenerator:
             else:  # remove the line delimiter "\n" at the end of this line
                 line = line.replace("\n", "")
             print(line)
+            if (line == '(())'):
+                if (indexOfSentence in ids):
+                    arrayOfIDs.append(indexOfSentence)
+                    arrayList.append([])
+                indexOfSentence += 1    
+
             if (firstLineOfABatch and line != '(())'):
                 text = line + '\n'
                 self.anchorForEachBach.write(text)
@@ -294,15 +303,24 @@ class AdjGenerator:
         #     print("EOF !!")
         #     return None, None, None, None
 
+        # Rearrange in the order of ids
+        resultArrayList = []
+        print("Array of ids unordered: ")
+        print(arrayOfIDs)
+        for id in ids:
+            for index, value in enumerate(arrayOfIDs):
+                if (value == id):
+                    resultArrayList.append(arrayList[index])
+
         # Shift the index of the word        
-        for index, arrayOfASentence in enumerate(arrayList):
+        for index, arrayOfASentence in enumerate(resultArrayList):
             shiftValue = index * self.numberOfWords
             for dependencyArray in arrayOfASentence:
                 dependencyArray[1] += shiftValue
                 dependencyArray[2] += shiftValue
 
         print("Array list after shifting value: ")
-        print(arrayList)
+        print(resultArrayList)
 
         # Create the matrix
         numberOfRows = self.numberOfWords * self.batchSize
@@ -314,7 +332,7 @@ class AdjGenerator:
         adjInverseMatrix = np.zeros((numberOfRows, numberOfRows))
 
         # Fill value to this matrix
-        for index, arrayOfASentence in enumerate(arrayList):
+        for index, arrayOfASentence in enumerate(resultArrayList):
             for dependencyArray in arrayOfASentence:
                 labelMatrix[dependencyArray[1]
                             ][dependencyArray[2]] = dependencyArray[0]
@@ -351,7 +369,7 @@ class AdjGenerator:
 
 
 adjGenerator = AdjGenerator("test.txt", numberOfWords=19, batchSize=80)
-label, adj, labelInverse, adjInverse = adjGenerator.generateMatrixFromIDs([80, 100, 10000])
+label, adj, labelInverse, adjInverse = adjGenerator.generateMatrixFromIDs([2, 1, 3, 0, 5, 4])
 print("Result: ")
 print(label)
 print(adj)
