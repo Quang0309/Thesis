@@ -69,6 +69,8 @@ def load_langpair_dataset(
 
     return LanguagePairDataset(
         src_dataset, src_dataset.sizes, src_dict,
+        data_path,
+        split,
         tgt_dataset, tgt_dataset.sizes, tgt_dict,
         left_pad_source=left_pad_source,
         left_pad_target=left_pad_target,

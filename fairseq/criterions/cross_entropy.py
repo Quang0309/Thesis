@@ -27,7 +27,12 @@ class CrossEntropyCriterion(FairseqCriterion):
         2) the sample size, which is used as the denominator for the gradient
         3) logging outputs to display while training
         """
+
+        # print("criterion")
+        # print(sample)
         net_output = model(**sample['net_input'])
+        
+
         loss, _ = self.compute_loss(model, net_output, sample, reduce=reduce)
         sample_size = sample['target'].size(0) if self.args.sentence_avg else sample['ntokens']
         logging_output = {

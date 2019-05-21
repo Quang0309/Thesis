@@ -179,7 +179,7 @@ class FConvEncoder(FairseqEncoder):
             layer_in_channels.append(out_channels)
         self.fc2 = Linear(in_channels, embed_dim)
 
-    def forward(self, src_tokens, src_lengths):
+    def forward(self, src_tokens, src_lengths, adj):
         """
         Args:
             src_tokens (LongTensor): tokens in the source language of shape
