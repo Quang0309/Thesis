@@ -138,6 +138,8 @@ class LanguagePairDataset(FairseqDataset):
             name = 'train.en.out'
         elif (split == 'valid'):
             name = 'valid.en.out'
+        elif (split == 'test'):
+            name = 'test.en.out'
         self.adj_generator = AdjGenerator(name, numberOfWords=19, batchSize=80)
 
     def __getitem__(self, index):
