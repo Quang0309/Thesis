@@ -292,6 +292,7 @@ class AdjGenerator:
         if (arrayOfASentence != []): 
             print("Eof but not reach batch size...")
             if (indexOfSentence in ids):
+                arrayOfIDs.append(indexOfSentence)
                 arrayList.append(arrayOfASentence)
 
         arrayOfASentence = []
@@ -307,6 +308,8 @@ class AdjGenerator:
         resultArrayList = []
         print("Array of ids unordered: ")
         print(arrayOfIDs)
+        print("ids:")
+        print(ids)
         for id in ids:
             for index, value in enumerate(arrayOfIDs):
                 if (value == id):
@@ -369,7 +372,7 @@ class AdjGenerator:
 
 
 adjGenerator = AdjGenerator("test.txt", numberOfWords=19, batchSize=80)
-label, adj, labelInverse, adjInverse = adjGenerator.generateMatrixFromIDs([2, 1, 3, 0, 5, 4])
+label, adj, labelInverse, adjInverse = adjGenerator.generateMatrixFromIDs([1, 30, ])
 print("Result: ")
 print(label)
 print(adj)
