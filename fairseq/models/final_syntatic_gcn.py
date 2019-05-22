@@ -494,8 +494,7 @@ class DirectedGCN:
         print("Labels _ weigths : ")
         print(labels_weights)
         print(labels_weights.size())
-        labels = embedding_lookup_spa
-        rse(self.b, labels_pad, labels_weights).cuda()
+        labels = embedding_lookup_sparse(self.b, labels_pad, labels_weights).cuda()
         print("Labels: ")
         print(labels.size())
         print("b: ")
