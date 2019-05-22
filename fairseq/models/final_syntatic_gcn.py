@@ -430,6 +430,13 @@ class DirectedGCN:
         # gates are applied through the adjacency matrix values
 
         # apply sparse dropout
+        print("Inputs: ")
+        print(inputs)
+        print(inputs.size())
+        adj = adj.cuda()
+        labels = labels.cuda()
+        adj_inv = adj_inv.cuda()
+        labels_inv = labels_inv.cuda()
         state_dim = inputs.size()[2]
         inputs2d = torch.reshape(inputs, [-1, state_dim])
 
@@ -462,6 +469,10 @@ class DirectedGCN:
         h = torch.matmul(inputs2d, self.w)
         
         #h = tf.sparse_tensor_dense_matmul(adj, h)
+        print("adj size:")
+        print(adj.size())
+        print("h size:")
+        print(h.size())
         h = torch.sparse.mm(adj, h)
         #labels_pad, _ = tf.sparse_fill_empty_rows(labels, 0)
         #labels_weights, _ = tf.sparse_fill_empty_rows(adj, 0.)
@@ -539,39 +550,39 @@ class DirectedGCN:
 
     def _create_weight_matrices(self):
         """Creates all GCN weight matrices."""
-        self.w = torch.empty(self.layer_size,self.layer_size,requires_grad=True)
+        self.w = torch.empty(self.layer_size,self.layer_size,requires_grad=True).cuda()
         nn.init.normal_(self.w, std = 0.01)
        
-        self.w_inv = torch.empty(self.layer_size,self.layer_size,requires_grad=True)
+        self.w_inv = torch.empty(self.layer_size,self.layer_size,requires_grad=True).cuda()
         nn.init.normal_(self.w_inv, std = 0.01)
         
-        self.w_loop = torch.empty(self.layer_size,self.layer_size,requires_grad=True)
+        self.w_loop = torch.empty(self.layer_size,self.layer_size,requires_grad=True).cuda()
         nn.init.normal_(self.w_loop, std = 0.01)
        
-        self.w_gate = torch.empty(self.layer_size,1,requires_grad=True)
+        self.w_gate = torch.empty(self.layer_size,1,requires_grad=True).cuda()
         nn.init.normal_(self.w_gate, std = 0.01)
         
-        self.w_gate_inv = torch.empty(self.layer_size,1,requires_grad=True)
+        self.w_gate_inv = torch.empty(self.layer_size,1,requires_grad=True).cuda()
         nn.init.normal_(self.w_gate_inv, std = 0.01)
         
-        self.w_gate_loop = torch.empty(self.layer_size,1,requires_grad=True)
+        self.w_gate_loop = torch.empty(self.layer_size,1,requires_grad=True).cuda()
         nn.init.normal_(self.w_gate_loop, std = 0.01)
         
-        self.b_gate = torch.empty(self.num_labels,requires_grad=True)
+        self.b_gate = torch.empty(self.num_labels,requires_grad=True).cuda()
         nn.init.normal_(self.b_gate,mean = 0.0, std = 0.01)
         
-        self.b_gate_inv = torch.empty(self.num_labels,requires_grad=True)
+        self.b_gate_inv = torch.empty(self.num_labels,requires_grad=True).cuda()
         nn.init.normal_(self.b_gate_inv,mean = 0.0, std = 0.01)
         
-        self.b_gate_loop= torch.tensor([1.],requires_grad=True)
+        self.b_gate_loop= torch.tensor([1.],requires_grad=True).cuda()
        
-        self.b = torch.empty(self.num_labels,self.layer_size,requires_grad=True)
+        self.b = torch.empty(self.num_labels,self.layer_size,requires_grad=True).cuda()
         nn.init.normal_(self.b, std = 0.01)
        
-        self.b_inv = torch.empty(self.num_labels,self.layer_size,requires_grad=True)
+        self.b_inv = torch.empty(self.num_labels,self.layer_size,requires_grad=True).cuda()
         nn.init.normal_(self.b_inv, std = 0.01)
         
-        self.b_loop = torch.empty(self.layer_size,requires_grad=True)
+        self.b_loop = torch.empty(self.layer_size,requires_grad=True).cuda()
         nn.init.normal_(self.b_loop, std = 0.01)
         
 #layer_size = 5
