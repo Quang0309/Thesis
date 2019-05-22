@@ -237,4 +237,4 @@ class AdjGenerator:
         adjInverseMatrix = torch.from_numpy(adjInverseMatrix)
         adjInverseMatrix = self.to_sparse(adjInverseMatrix).long()
 
-        return labelMatrix, adjMatrix, labelInverseMatrix, adjInverseMatrix
+        return labelMatrix.cuda(), adjMatrix.cuda(), labelInverseMatrix.cuda(), adjInverseMatrix.cuda()

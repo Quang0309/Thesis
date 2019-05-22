@@ -137,67 +137,70 @@ def segment_sum(embeddings, segment_ids):
 
 
 def embedding_lookup_sparse(embeddings, sparse_ids, sparse_weights):
-    #print("Embedding lookup sparse")
+    print("Embedding lookup sparse")
     
-    #print("--- Embeddings:")
-    #print(embeddings.size())
+    print("--- Embeddings:")
+    print(embeddings.size())
     
-    #print("--- sparse_ids:")
-    #print(sparse_ids)
-    #print("sparse_ids size:")
-    #print(sparse_ids.size())
-    #print("sparse_ids values: ")
-    #print(sparse_ids._values())
-    #print("sparse_ids values size:")
-    #print(sparse_ids._values().size())
+    print("--- sparse_ids:")
+    print(sparse_ids)
+    print("sparse_ids size:")
+    print(sparse_ids.size())
+    print("sparse_ids values: ")
+    print(sparse_ids._values())
+    print("sparse_ids values size:")
+    print(sparse_ids._values().size())
     
-    #print("--- sparse_weights:")
-    #print(sparse_weights.size())
-    #print("sparse_weights values: ")
-    #print(sparse_weights._values())
-    #print("sparse_weights values size:") 
-    #print(sparse_weights._values().size())
+    print("--- sparse_weights:")
+    print(sparse_weights.size())
+    print("sparse_weights values: ")
+    print(sparse_weights._values())
+    print("sparse_weights values size:") 
+    print(sparse_weights._values().size())
     
     if (sparse_ids.size() != sparse_weights.size()):
         raise ValueError("Shape of sparse_ids and sparse_weights are incompatible")
     
     
     a = sparse_ids._indices()
-    #print("--- sparse_ids indices: ")
-    #print(a)    
+    print("--- sparse_ids indices: ")
+    print(a)    
     
     segment_ids = sparse_ids._indices()[0] # get the tensor containing all the rows
-    #print("--- segment_ids:")
-    #print(segment_ids)
+    print("--- segment_ids:")
+    print(segment_ids)
     
     ids = sparse_ids._values()
-    #print("--- ids = sparse_ids.values(): ")
-    #print(ids)
+    print("--- ids = sparse_ids.values(): ")
+    print(ids)
     
     ids, idx = torch.unique(ids, sorted=True, return_inverse=True)
-    #print("--- After unique(ids): ")
-    #print("ids: ")
-    #print(ids)
-    #print("idx: ")
-    #print(idx)
+    print("--- After unique(ids): ")
+    print("ids: ")
+    print(ids)
+    print("idx: ")
+    print(idx)
     
     embeddings = embedding_lookup(embeddings, ids)
-    #print("--- Embeddings after embedding_lookup: ")
-    #print(embeddings)
-    #print(embeddings.size())
+    print("--- Embeddings after embedding_lookup: ")
+    print(embeddings)
+    print(embeddings.size())
     
     weights = sparse_weights._values().unsqueeze(-1)
-    #print("Weights: ")
-    #print(weights)
+    print("Weights: ")
+    print(weights)
+    print(weights.size())
     
     
     origin_size = embeddings.size()
-    #print("--- origin size:")
-    #print(origin_size)
+    print("--- origin size:")
+    print(origin_size)
     
     embeddings = embeddings[idx] # equivalent to tf.gather     
-    #print("--- Embeddings after embeddings[idx] ")
-    #print(embeddings)    
+    print("--- Embeddings after embeddings[idx] ")
+    print(embeddings)    
+    print(embeddings.size())
+    
     
         # Reshape weights to allow broadcast
 #     ones = array_ops.fill(
@@ -239,15 +242,18 @@ def embedding_lookup_sparse(embeddings, sparse_ids, sparse_weights):
 #     print(weights.size())
     
     embeddings *= weights
-    #print(" embeddings after multiplication: ")
-    #print(embeddings.size())
+    print(" embeddings after multiplication: ")
+    print(embeddings.size())
     
     result = segment_sum(embeddings, segment_ids)
-    embeddings = torch.ones((origin_size[1], origin_size[1]))
+    print("Result: ")
+    print(result)
+    print(result.size())
+    embeddings = torch.zeros((sparse_ids.size()[0], origin_size[1])) # 2720 * 256
     embeddings.new_tensor(result)
 
-    #print("--- Return embeddings...")
-    #print(embeddings.size())
+    print("--- Return embeddings...")
+    print(embeddings.size())
     return embeddings
 
 
@@ -296,6 +302,7 @@ def sparse_retain(tensor,masked_select):
 def embedding_lookup(embeddings, indices):
     #print(indices.size())
     #print(embeddings.index_select(0, indices.view(-1)))
+    indices.cuda()
     return embeddings.index_select(0, indices.view(-1)).view(*(indices.size() + embeddings.size()[1:]))
 
 #print(n)
@@ -433,10 +440,10 @@ class DirectedGCN:
         print("Inputs: ")
         print(inputs)
         print(inputs.size())
-        adj = adj.cuda()
-        labels = labels.cuda()
-        adj_inv = adj_inv.cuda()
-        labels_inv = labels_inv.cuda()
+        # adj = adj.cuda()
+        # labels = labels.cuda()
+        # adj_inv = adj_inv.cuda()
+        # labels_inv = labels_inv.cuda()
         state_dim = inputs.size()[2]
         inputs2d = torch.reshape(inputs, [-1, state_dim])
 
@@ -444,8 +451,8 @@ class DirectedGCN:
             adj, self.edge_dropout_keep_p, self.train_mode)
         to_retain = torch.squeeze(to_retain)
 
-        adj = sparse_retain(adj, to_retain)
-        labels = sparse_retain(labels, to_retain)
+        adj = sparse_retain(adj, to_retain).cuda()
+        labels = sparse_retain(labels, to_retain).cuda()
         
         # apply gates        
         gates = torch.matmul(inputs2d, self.w_gate)
@@ -473,18 +480,27 @@ class DirectedGCN:
         print(adj.size())
         print("h size:")
         print(h.size())
-        h = torch.sparse.mm(adj, h)
+        h = torch.sparse.mm(adj, h).cuda()
         #labels_pad, _ = tf.sparse_fill_empty_rows(labels, 0)
         #labels_weights, _ = tf.sparse_fill_empty_rows(adj, 0.)
         #print(labels)
         #print(adj)
-        labels_pad = sparse_fill_empty_rows_V2(labels,0)
-        labels_weights = sparse_fill_empty_rows_V2(adj, 0.)
+        labels_pad = sparse_fill_empty_rows_V2(labels,0).cuda()
+        labels_weights = sparse_fill_empty_rows_V2(adj, 0.).cuda()
         #print(self.b.size())
-        #print(labels_pad)
-        #print(labels_weights)
-        labels = embedding_lookup_sparse(self.b, labels_pad, labels_weights)
-        
+        print("Labels _ pad : ")
+        print(labels_pad)
+        print(labels_pad.size())
+        print("Labels _ weigths : ")
+        print(labels_weights)
+        print(labels_weights.size())
+        labels = embedding_lookup_spa
+        rse(self.b, labels_pad, labels_weights).cuda()
+        print("Labels: ")
+        print(labels.size())
+        print("b: ")
+        print(self.b.size())
+
         h = h + labels
         h = torch.reshape(h,inputs.size())
         #h = tf.reshape(h, tf.shape(inputs))
@@ -497,8 +513,8 @@ class DirectedGCN:
             adj_inv, self.edge_dropout_keep_p, self.train_mode)
         to_retain_inv = torch.squeeze(to_retain_inv)
 
-        adj_inv = sparse_retain(adj_inv, to_retain_inv)
-        labels_inv = sparse_retain(labels_inv, to_retain_inv)
+        adj_inv = sparse_retain(adj_inv, to_retain_inv).cuda()
+        labels_inv = sparse_retain(labels_inv, to_retain_inv).cuda()
 
         # apply gates
         gates_inv = torch.matmul(inputs2d, self.w_gate_inv)
@@ -508,24 +524,24 @@ class DirectedGCN:
         values_inv = sigmoid(adj_inv._values().float() + gates_inv_bias)
 
         # dropout scaling
-        values_inv /= torch.where(self.train_mode, torch.tensor(self.edge_dropout_keep_p), torch.tensor(1.0))
-        adj_inv = torch.sparse_coo_tensor(adj_inv._indices(), values_inv, adj_inv.size())
+        values_inv /= torch.where(self.train_mode, torch.tensor(self.edge_dropout_keep_p), torch.tensor(1.0)).cuda()
+        adj_inv = torch.sparse_coo_tensor(adj_inv._indices(), values_inv, adj_inv.size()).cuda()
 
 
         # graph convolution, dependents to heads ("in")
         
-        h_inv = torch.matmul(inputs2d, self.w_inv)
+        h_inv = torch.matmul(inputs2d, self.w_inv).cuda()
 
         # h_inv = tf.sparse_tensor_dense_matmul(adj_inv, h_inv)
         h_inv = torch.sparse.mm(adj_inv, h_inv)
 
         # labels_inv_pad, _ = tf.sparse_fill_empty_rows(labels_inv, 0)
-        labels_inv_pad = sparse_fill_empty_rows_V2(labels_inv,0)
+        labels_inv_pad = sparse_fill_empty_rows_V2(labels_inv,0).cuda()
 
         # labels_inv_weights, _ = tf.sparse_fill_empty_rows(adj_inv, 0.)
-        labels_inv_weights = sparse_fill_empty_rows_V2(adj_inv,0)
+        labels_inv_weights = sparse_fill_empty_rows_V2(adj_inv,0).cuda()
 
-        labels_inv = embedding_lookup_sparse(self.b_inv, labels_inv_pad, labels_inv_weights,)
+        labels_inv = embedding_lookup_sparse(self.b_inv, labels_inv_pad, labels_inv_weights,).cuda()
 
         h_inv = h_inv + labels_inv
         h_inv = torch.reshape(h_inv, inputs.size())
