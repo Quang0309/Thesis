@@ -45,9 +45,9 @@ class AdjGenerator:
         dir_path = os.path.abspath(os.curdir)
         dir_path = dir_path + '/data-bin' '/tokenized.en-vi/' + self.fileName
         print(dir_path)
+        self.dir_path = dir_path
 
         # self.inputFile = open(self.fileName, "r", encoding="utf8")
-        self.inputFile = open(dir_path, "r", encoding="utf8")
         self.anchorForEachBach = open("AnchorForEachBach.txt", "w")
 
     def to_sparse(self, x):
@@ -62,8 +62,10 @@ class AdjGenerator:
         values = x[tuple(indices[i] for i in range(indices.shape[0]))]
         return sparse_tensortype(indices, values, x.size())
 
-    def generateTensorsFromIDs(self, ids, numberOfWordsPerSentence):
+    def generateTensorsFromIDs(self, ids, numberOfWordsPerSentence, batchSize):
+        self.inputFile = open(self.dir_path, "r", encoding="utf8")
         self.numberOfWords = numberOfWordsPerSentence
+        self.batchSize = batchSize
         arrayList = []
         arrayOfIDs = []
         arrayOfASentence = []
@@ -188,6 +190,10 @@ class AdjGenerator:
         # Shift the index of the word        
         for index, arrayOfASentence in enumerate(resultArrayList):
             shiftValue = index * self.numberOfWords
+            print("Shift value:")
+            print(shiftValue)
+            print("Array of a senetnce")
+            print(arrayOfASentence)
             for dependencyArray in arrayOfASentence:
                 dependencyArray[1] += shiftValue
                 dependencyArray[2] += shiftValue

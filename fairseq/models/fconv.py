@@ -201,9 +201,9 @@ class FConvEncoder(FairseqEncoder):
         label = ''
         adj_inv = ''
         label_inv = ''
-        print("Key words args for fconv:")
+        # print("Key words args for fconv:")
         for key, value in kwargs.items():
-            print ("%s = %s" % (key, value))
+            # print ("%s = %s" % (key, value))
             if (key == 'adjTensor'):
                 adj = value
             elif (key == 'labelTensor'):

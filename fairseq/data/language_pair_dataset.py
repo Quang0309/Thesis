@@ -30,10 +30,22 @@ def collate(
     id = torch.LongTensor([s['id'] for s in samples])
     src_tokens = merge('source', left_pad=left_pad_source)
     # sort by descending source length
+    # i = 0
+    # arr = []
+    # for s in samples:
+    #     if (i < 50):
+    #         arr.append(s['source'].numel())
+    #     else: 
+    #         break
+    #     i += 1
+    # src_lengths = torch.LongTensor(arr)
     src_lengths = torch.LongTensor([s['source'].numel() for s in samples])
+    
     src_lengths, sort_order = src_lengths.sort(descending=True)
     id = id.index_select(0, sort_order)
     src_tokens = src_tokens.index_select(0, sort_order)
+    print("Src _ lenghts: ")
+    print(src_lengths)
 
     prev_output_tokens = None
     target = None
@@ -54,11 +66,10 @@ def collate(
     else:
         ntokens = sum(len(s['source']) for s in samples)
 
-    #print(src_lengths[0].item())
-    #print("Here")
-    #print(id)
-    adjTensor, labelTensor, adjInverseTensor, labelInverseTensor = adj_generator.generateTensorsFromIDs(id, src_lengths[0].item())
-    #print(adjTensor)
+    # print(id)
+    # print(len(id))
+    
+    adjTensor, labelTensor, adjInverseTensor, labelInverseTensor = adj_generator.generateTensorsFromIDs(id, src_lengths[0].item(), len(id))
     
 
     batch = {
@@ -146,9 +157,11 @@ class LanguagePairDataset(FairseqDataset):
             name = 'valid.en.out'
         elif (split == 'test'):
             name = 'test.en.out'
-        self.adj_generator = AdjGenerator.AdjGenerator(name, numberOfWords=50, batchSize=40)
-
+        self.adj_generator = AdjGenerator.AdjGenerator(name, numberOfWords=50, batchSize=80)
+        self.count = 0
     def __getitem__(self, index):
+        index = self.count
+        self.count += 1
         tgt_item = self.tgt[index] if self.tgt is not None else None
         src_item = self.src[index]
         # Append EOS to end of tgt sentence if it does not have an EOS and remove
