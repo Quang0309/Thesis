@@ -1,7 +1,6 @@
-
-from enum import Enum
+import torch
 import numpy as np
-
+import os
 
 class Dictionary():
     def __init__(self):
@@ -13,10 +12,10 @@ class Dictionary():
             for line in lines.split():
                 if (line not in ['\n', '\r\n']):
                     line = line.replace("\n","")
-                    print(line)
+                    # print(line)
                     self.mydict[line] = self.value
                     self.value += 1
-            print(self.mydict)    
+            # print(self.mydict)    
 
         self.unvisited = []
 
@@ -42,27 +41,69 @@ class AdjGenerator:
         self.dictionary = Dictionary()
         self.numberOfWords = numberOfWords
         self.batchSize = batchSize
-        self.inputFile = open(self.fileName, "r", encoding="utf8")
+
+        dir_path = os.path.abspath(os.curdir)
+        dir_path = dir_path + '/data-bin' '/tokenized.en-vi/' + self.fileName
+        print(dir_path)
+        self.dir_path = dir_path
+
+        # self.inputFile = open(self.fileName, "r", encoding="utf8")
         self.anchorForEachBach = open("AnchorForEachBach.txt", "w")
 
-    def generateMatrix(self):
+    def to_sparse(self, x):
+        """ converts dense tensor x to sparse format """
+        x_typename = torch.typename(x).split('.')[-1]
+        sparse_tensortype = getattr(torch.sparse, x_typename)
+
+        indices = torch.nonzero(x)
+        if len(indices.shape) == 0:  # if all elements are zeros
+            return sparse_tensortype(*x.shape)
+        indices = indices.t()
+        values = x[tuple(indices[i] for i in range(indices.shape[0]))]
+        return sparse_tensortype(indices, values, x.size())
+
+    def generateTensorsFromIDs(self, ids, numberOfWordsPerSentence, batchSize):
+        self.inputFile = open(self.dir_path, "r", encoding="utf8")
+        self.numberOfWords = numberOfWordsPerSentence
+        self.batchSize = batchSize
         arrayList = []
+        arrayOfIDs = []
         arrayOfASentence = []
         firstLineOfABatch = True
+        indexOfSentence = -1
+        isSentenceWithRoot = False
+        
 
         for line in self.inputFile:
             if (line in ['\n', '\r\n']):
-                print("Empty line! End of a sentence.")
-                if (arrayOfASentence != []):
-                    arrayList.append(arrayOfASentence)
-                    
+                #print("Empty line! End of a sentence.")
+                if (arrayOfASentence != []): 
+                    if (indexOfSentence in ids):
+                        arrayOfIDs.append(indexOfSentence)
+                        arrayList.append(arrayOfASentence)                
+                    indexOfSentence += 1
+                elif (isSentenceWithRoot): # case when sentence has only Root(bla, bla)
+                    isSentenceWithRoot = False  
+                    if (indexOfSentence in ids):
+                        arrayOfIDs.append(indexOfSentence)
+                        arrayList.append(arrayOfASentence)                
+                    indexOfSentence += 1
+
                 arrayOfASentence = []
                 if len(arrayList) == self.batchSize:
-                    print("Completed a batch !!!")
+                 #   print("Completed a batch !!!")
                     break
             else:  # remove the line delimiter "\n" at the end of this line
                 line = line.replace("\n", "")
-            print(line)
+
+            # print(line)
+
+            if (line == '(())'):
+                if (indexOfSentence in ids):
+                    arrayOfIDs.append(indexOfSentence)
+                    arrayList.append([])
+                indexOfSentence += 1    
+
             if (firstLineOfABatch and line != '(())'):
                 text = line + '\n'
                 self.anchorForEachBach.write(text)
@@ -80,8 +121,8 @@ class AdjGenerator:
                 if (character == '('):  # Dependency
                     if (line[index + 1] != '('):  # check the char next to the '('
                         dependency = line[0:index]
-                        print("Dependency:")
-                        print(dependency)
+                        # print("Dependency:")
+                        # print(dependency)
                     else:
                         break
 
@@ -99,8 +140,8 @@ class AdjGenerator:
                                 break
                         
                         firstNumber = int(line[start:end])
-                        print("Number: ")
-                        print(firstNumber)
+                        # print("Number: ")
+                        # print(firstNumber)
                         isFirstNumber = False
                     else:
                         i = 1
@@ -112,53 +153,71 @@ class AdjGenerator:
                                 break
                                                  
                         secondNumber = int(line[start:end])
-                        print("Second number:")
-                        print(secondNumber)
+                        # print("Second number:")
+                        # print(secondNumber)
 
                         if (dependency != 'root'):
                             # Creating an array with form (dependencyNumber, firstNumber, secondNumber) for this dependency
                             dependencyArray = [self.dictionary.getDependencyValue(dependency),
                                                firstNumber - 1,
                                                secondNumber - 1]
-                            print("array: ")
-                            print(dependencyArray)
+                            # print("array: ")
+                            # print(dependencyArray)
                             arrayOfASentence.append(dependencyArray)                    
+                        else:
+                            isSentenceWithRoot = True
 
         # Case when eof but not reach batch size
         #   or, there's one empty line at the last of the file :) 
         if (arrayOfASentence != []): 
-            print("Eof but not reach batch size...")
-            arrayList.append(arrayOfASentence)
+            # print("Eof but not reach batch size...")
+            if (indexOfSentence in ids):
+                arrayOfIDs.append(indexOfSentence)
+                arrayList.append(arrayOfASentence)
+
         arrayOfASentence = []
         
-        numberOfSentence = len(arrayList)
-        print("Number of sentences:")
-        print(numberOfSentence)
-        if (numberOfSentence == 0):
-            print("EOF !!")
-            return None, None, None, None
+        # numberOfSentence = len(arrayList)
+        # print("Number of sentences:")
+        # print(numberOfSentence)
+
+        # if (numberOfSentence == 0):
+        #     print("EOF !!")
+        #     return None, None, None, None
+
+        # Rearrange in the order of ids
+        resultArrayList = []
+        # print("Array of ids")
+        # print(ids)
+        # print("ids unordered")
+        # print(arrayOfIDs)
+
+        for id in ids:
+            for index, value in enumerate(arrayOfIDs):
+                if (value == id):
+                    resultArrayList.append(arrayList[index])
 
         # Shift the index of the word        
-        for index, arrayOfASentence in enumerate(arrayList):
+        for index, arrayOfASentence in enumerate(resultArrayList):
             shiftValue = index * self.numberOfWords
             for dependencyArray in arrayOfASentence:
                 dependencyArray[1] += shiftValue
                 dependencyArray[2] += shiftValue
 
         print("Array list after shifting value: ")
-        print(arrayList)
+        print(resultArrayList)
 
         # Create the matrix
         numberOfRows = self.numberOfWords * self.batchSize
-        print("Number of rows:")
-        print(numberOfRows)
+        # print("Number of rows:")
+        # print(numberOfRows)
         labelMatrix = np.zeros((numberOfRows, numberOfRows))
         adjMatrix = np.zeros((numberOfRows, numberOfRows))
         labelInverseMatrix = np.zeros((numberOfRows, numberOfRows))
         adjInverseMatrix = np.zeros((numberOfRows, numberOfRows))
 
         # Fill value to this matrix
-        for index, arrayOfASentence in enumerate(arrayList):
+        for index, arrayOfASentence in enumerate(resultArrayList):
             for dependencyArray in arrayOfASentence:
                 labelMatrix[dependencyArray[1]
                             ][dependencyArray[2]] = dependencyArray[0]
@@ -170,37 +229,30 @@ class AdjGenerator:
                 adjInverseMatrix[dependencyArray[2]][dependencyArray[1]] = 1
 
 
-        print("Label matrix: ")
-        print(labelMatrix)
-        print(labelMatrix.shape)
+        # print("Label matrix: ")
+        # print(labelMatrix)
+        # print(labelMatrix.shape)
 
-        print("Adj matrix: ")
-        print(adjMatrix)
+        # print("Adj matrix: ")
+        # print(adjMatrix)
 
-        return labelMatrix, adjMatrix, labelInverseMatrix, adjInverseMatrix
+        self.inputFile.close()
+        labelMatrix = torch.from_numpy(labelMatrix)
+        labelMatrix = self.to_sparse(labelMatrix).long()
 
+        adjMatrix = torch.from_numpy(adjMatrix)
+        adjMatrix = self.to_sparse(adjMatrix).long()
 
-adjGenerator = AdjGenerator("train.en.out", batchSize=80)
-label, adj, labelInverse, adjInverse = adjGenerator.generateMatrix()
-print("Result: ")
-print(label)
-print(adj)
-print(labelInverse)
-print(adjInverse)
+        labelInverseMatrix = torch.from_numpy(labelInverseMatrix)
+        labelInverseMatrix = self.to_sparse(labelInverseMatrix).long()
 
-count = 1
-stop = False
-while (stop == False):
-    label2, adj2, labelInverse2, adjInverse2 = adjGenerator.generateMatrix()
-    if (label2 is None):
-        print("Done !!")
-        print("Count: ")
-        print(count)
-        stop = True
-    else: 
-        count += 1
-        print("Result 2:")
-        print(label2)
-        print(adj2)
-        print(labelInverse2)
-        print(adjInverse2)
+        adjInverseMatrix = torch.from_numpy(adjInverseMatrix)
+        adjInverseMatrix = self.to_sparse(adjInverseMatrix).long()
+
+        return labelMatrix.cuda(), adjMatrix.cuda(), labelInverseMatrix.cuda(), adjInverseMatrix.cuda()
+        
+adj = AdjGenerator("train.en.out")
+ids = [59,60, 61]
+adj, label, adjinv, labelinv = adj.generateTensorsFromIDs(ids, 50, 3)
+
+        
