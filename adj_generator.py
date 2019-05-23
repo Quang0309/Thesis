@@ -82,149 +82,104 @@ class AdjGenerator:
         self.numberOfWords = numberOfWordsPerSentence
         self.batchSize = batchSize
         arrayList = []
-        arrayOfIDs = []
-        arrayOfASentence = []
-        firstLineOfABatch = True
-        indexOfSentence = 0
-        isSentenceWithRoot = False
         
+        firstLineOfABatch = True
+        isSentenceWithRoot = False
 
-        for line in self.inputFile:
-            #if(indexOfSentence in ids):
-                #print('long-> ' + line)
-            if (line in ['\n', '\r\n']):
-                #print("Empty line! End of a sentence.")
-                if (arrayOfASentence != []): 
-                    if (indexOfSentence in ids):
-                        arrayOfIDs.append(indexOfSentence)
-                        arrayList.append(arrayOfASentence)                
-                    indexOfSentence += 1
-                elif (isSentenceWithRoot): # case when sentence has only Root(bla, bla)
-                    isSentenceWithRoot = False  
-                    if (indexOfSentence in ids):
-                        arrayOfIDs.append(indexOfSentence)
-                        arrayList.append(arrayOfASentence)                
-                    indexOfSentence += 1
 
-                arrayOfASentence = []
-                if len(arrayList) == self.batchSize:
-                 #   print("Completed a batch !!!")
-                    break
-            else:  # remove the line delimiter "\n" at the end of this line
-                line = line.replace("\n", "")
+        for id in ids:            
+            arrayOfASentence = []
 
-            # print(line)
+            offsetMapping = self.dictionaryOffsetArray[id]        
+            startOffset = offsetMapping[0] # start offset of the file pointer
+            length = offsetMapping[1] # length of this sentence
 
-            if (line == '(())'):
-                if (indexOfSentence in ids):
-                    arrayOfIDs.append(indexOfSentence)
-                    arrayList.append([])
-                indexOfSentence += 1    
+            self.inputFile.seek(startOffset)
+            lines = self.inputFile.read(length).split('\n')
+            # print("input: ")
+            # print(lines)
 
-            if (firstLineOfABatch and line != '(())'):
-                text = line + '\n'
-                self.anchorForEachBach.write(text)
-                firstLineOfABatch = False
-
-            start = 0
-            end = 0
-            isFirstNumber = True
-            firstNumber = -1
-            secondNumber = -1
-            dependency = ''
-
-            for index, character in enumerate(line):
-                # print(character)
-                if (character == '('):  # Dependency
-                    if (line[index + 1] != '('):  # check the char next to the '('
-                        dependency = line[0:index]
-                        # print("Dependency:")
-                        # print(dependency)
-                    else:
-                        break
-
-                elif (character == '-'):
-                    start = index + 1
-                elif ((character == ',' and line[index + 1] == ' ') or character == ')'):
-                    end = index
-                    if (isFirstNumber):
-                        i = 1
-                        while (True):
-                            if (line[index - i] == "'"):
-                                end = end - 1
-                                i += 1
+            if (lines == '(())'):                
+                arrayList.append([])
+            else:
+                for line in lines:
+                    # print(line)
+                    start = 0
+                    end = 0
+                    isFirstNumber = True
+                    firstNumber = -1
+                    secondNumber = -1
+                    dependency = ''
+                    for index, character in enumerate(line):                        
+                        if (character == '('):  # Dependency
+                            if (line[index + 1] != '('):  # check the char next to the '('
+                                dependency = line[0:index]
+                                # print("Dependency:")
+                                # print(dependency)
                             else:
                                 break
+
+                        elif (character == '-'):
+                            start = index + 1
+                        elif ((character == ',' and line[index + 1] == ' ') or character == ')'):
+                            end = index
+                            if (isFirstNumber):
+                                i = 1
+                                while (True):
+                                    if (line[index - i] == "'"):
+                                        end = end - 1
+                                        i += 1
+                                    else:
+                                        break
                         
-                        firstNumber = int(line[start:end])
-                        # print("Number: ")
-                        # print(firstNumber)
-                        isFirstNumber = False
-                    else:
-                        i = 1
-                        while (True):
-                            if (line[index - i] == "'"):
-                                end = end - 1
-                                i += 1
+                                firstNumber = int(line[start:end])
+                                # print("Number: ")
+                                # print(firstNumber)
+                                isFirstNumber = False
                             else:
-                                break
+                                i = 1
+                                while (True):
+                                    if (line[index - i] == "'"):
+                                        end = end - 1
+                                        i += 1
+                                    else:
+                                        break
                                                  
-                        secondNumber = int(line[start:end])
-                        # print("Second number:")
-                        # print(secondNumber)
+                                secondNumber = int(line[start:end])
+                                # print("Second number:")
+                                # print(secondNumber)
 
-                        if (dependency != 'root'):
-                            if (firstNumber <= self.numberOfWords and secondNumber <= self.numberOfWords):
-                            # Creating an array with form (dependencyNumber, firstNumber, secondNumber) for this dependency
-                                dependencyArray = [self.dictionary.getDependencyValue(dependency),
+                                if (dependency != 'root'):
+                                    if (firstNumber <= self.numberOfWords and secondNumber <= self.numberOfWords):
+                                    # Creating an array with form (dependencyNumber, firstNumber, secondNumber) for this dependency
+                                        dependencyArray = [self.dictionary.getDependencyValue(dependency),
                                                firstNumber - 1,
                                                secondNumber - 1]
-                                # print("array: ")
-                                # print(dependencyArray)
-                                arrayOfASentence.append(dependencyArray)                    
-                        else:
-                            isSentenceWithRoot = True
+                                        # print("array: ")
+                                        # print(dependencyArray)
+                                        arrayOfASentence.append(dependencyArray)                    
+                            
+            # print("End !!")
+            # print(arrayOfASentence)
+            arrayList.append(arrayOfASentence)
 
-        # Case when eof but not reach batch size
-        #   or, there's one empty line at the last of the file :) 
-        if (arrayOfASentence != []): 
-            # print("Eof but not reach batch size...")
-            if (indexOfSentence in ids):
-                arrayOfIDs.append(indexOfSentence)
-                arrayList.append(arrayOfASentence)
-
-        arrayOfASentence = []
+        # print("Array list:")
+        # print(arrayList)
         
         # numberOfSentence = len(arrayList)
         # print("Number of sentences:")
         # print(numberOfSentence)
 
-        # if (numberOfSentence == 0):
-        #     print("EOF !!")
-        #     return None, None, None, None
-
-        # Rearrange in the order of ids
-        resultArrayList = []
-        # print("Array of ids")
-        # print(ids)
-        # print("ids unordered")
-        # print(arrayOfIDs)
-
-        for id in ids:
-            for index, value in enumerate(arrayOfIDs):
-                if (value == id):
-                    resultArrayList.append(arrayList[index])
-
         # Shift the index of the word        
-        for index, arrayOfASentence in enumerate(resultArrayList):
+        for index, arrayOfASentence in enumerate(arrayList):
             shiftValue = index * self.numberOfWords
             for dependencyArray in arrayOfASentence:
                 dependencyArray[1] += shiftValue
                 dependencyArray[2] += shiftValue
         
 
-        #print("Array list after shifting value: ")
-        #print(resultArrayList)
+        # print("Array list after shifting value: ")
+        # print(arrayList)
 
         # Create the matrix
         numberOfRows = self.numberOfWords * self.batchSize
@@ -236,7 +191,7 @@ class AdjGenerator:
         adjInverseMatrix = np.zeros((numberOfRows, numberOfRows))
 
         # Fill value to this matrix
-        for index, arrayOfASentence in enumerate(resultArrayList):
+        for index, arrayOfASentence in enumerate(arrayList):
             for dependencyArray in arrayOfASentence:
                 labelMatrix[dependencyArray[1]
                             ][dependencyArray[2]] = dependencyArray[0]
@@ -248,12 +203,12 @@ class AdjGenerator:
                 adjInverseMatrix[dependencyArray[2]][dependencyArray[1]] = 1
 
 
-        # print("Label matrix: ")
-        # print(labelMatrix)
-        # print(labelMatrix.shape)
+        print("Label matrix: ")
+        print(labelMatrix)
+        print(labelMatrix.shape)
 
-        # print("Adj matrix: ")
-        # print(adjMatrix)
+        print("Adj matrix: ")
+        print(adjMatrix)
 
         self.inputFile.close()
         # labelMatrix = torch.from_numpy(labelMatrix)
@@ -269,11 +224,11 @@ class AdjGenerator:
         # adjInverseMatrix = self.to_sparse(adjInverseMatrix).long()
 
         # return labelMatrix.cuda(), adjMatrix.cuda(), labelInverseMatrix.cuda(), adjInverseMatrix.cuda()
-        return labelMatrix, adjMatrix, labelInverseMatrix, adjInverseMatrix
+        # return labelMatrix, adjMatrix, labelInverseMatrix, adjInverseMatrix
 
 
     def generateDictionaryMapping(self):
-        self.dictionaryFile = open("dictionary.txt", "w")
+        self.dictionaryFile = open("dictionary.txt", "w", encoding="utf8")
         inputFile = open(self.dir_path, "r", encoding="utf8")
         isNewSentence = True
 
@@ -351,9 +306,46 @@ class AdjGenerator:
             # count += 1
             # if (count > 30):
             #     break
+    
+    def readSentence(self, startOffset, length):
+        inputFile = open(self.dir_path, "r", encoding="utf8")
+        inputFile.seek(startOffset)
+        s = inputFile.read(length)
+        print(s)
+        # print(self.dictionaryOffsetArray[60])
+        inputFile.close()
+        return s
+    
+    def readSentenceID(self, id):
+        offsetMapping = self.dictionaryOffsetArray[id]        
+        startOffset = offsetMapping[0] # start offset of the file pointer
+        length = offsetMapping[1] # length of this sentence
+        inputFile = open(self.dir_path, "r", encoding="utf8")
+        inputFile.seek(startOffset)
+        s = inputFile.read(length)
+        print(s)
+        inputFile.close()
+
+
 
         
 adj = AdjGenerator("train.en.out")
+# adj.generateTensorsFromIDs([1, 0, 2, 60], 50, 4)
+
+ids = []
+for i in range (50000,50160, 2):
+    ids.append(i)
+adj.generateTensorsFromIDs(ids, 50, 80)
+
+
+# adj.readSentence(25405, 19)
+# adj.readSentence(25174,219)
+# adj.readSentence(45822, 5)
+# adj.readSentence(45828, 574)
+
+# adj.readSentenceID(145403)
+
 # adj.generateDictionaryMapping()
 # adj.test()
+
         
