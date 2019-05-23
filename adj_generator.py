@@ -1,3 +1,4 @@
+# import torch
 import numpy as np
 import os
 
@@ -42,12 +43,27 @@ class AdjGenerator:
         self.batchSize = batchSize
 
         # dir_path = os.path.abspath(os.curdir)
-        # dir_path = dir_path + '/data-bin' '/tokenized.en-vi/' + self.fileName
+        # dir_path = dir_path +'/data-bin' '/tokenized.en-vi/' + self.fileName
         # print(dir_path)
+        # self.dir_path = dir_path
         self.dir_path = fileName
 
         # self.inputFile = open(self.fileName, "r", encoding="utf8")
         self.anchorForEachBach = open("AnchorForEachBach.txt", "w")
+
+
+        self.dictionaryOffsetArray = []
+        f = open("dictionary.txt", "r", encoding="utf8")
+        for line in f: 
+            line = line.strip()
+            line = line.split(':')
+            array = [int(line[0]), int(line[1])]
+            # print(array)
+            self.dictionaryOffsetArray.append(array)
+        f.close()
+        # print(self.dictionaryOffsetArray[0])
+        # print(self.dictionaryOffsetArray[1])
+        # print(self.dictionaryOffsetArray[2])
 
     def to_sparse(self, x):
         """ converts dense tensor x to sparse format """
@@ -74,6 +90,8 @@ class AdjGenerator:
         
 
         for line in self.inputFile:
+            #if(indexOfSentence in ids):
+                #print('long-> ' + line)
             if (line in ['\n', '\r\n']):
                 #print("Empty line! End of a sentence.")
                 if (arrayOfASentence != []): 
@@ -95,8 +113,7 @@ class AdjGenerator:
             else:  # remove the line delimiter "\n" at the end of this line
                 line = line.replace("\n", "")
 
-            if (indexOfSentence in ids):
-                print(line)
+            # print(line)
 
             if (line == '(())'):
                 if (indexOfSentence in ids):
@@ -157,13 +174,14 @@ class AdjGenerator:
                         # print(secondNumber)
 
                         if (dependency != 'root'):
+                            if (firstNumber <= self.numberOfWords and secondNumber <= self.numberOfWords):
                             # Creating an array with form (dependencyNumber, firstNumber, secondNumber) for this dependency
-                            dependencyArray = [self.dictionary.getDependencyValue(dependency),
+                                dependencyArray = [self.dictionary.getDependencyValue(dependency),
                                                firstNumber - 1,
                                                secondNumber - 1]
-                            # print("array: ")
-                            # print(dependencyArray)
-                            arrayOfASentence.append(dependencyArray)                    
+                                # print("array: ")
+                                # print(dependencyArray)
+                                arrayOfASentence.append(dependencyArray)                    
                         else:
                             isSentenceWithRoot = True
 
@@ -203,9 +221,10 @@ class AdjGenerator:
             for dependencyArray in arrayOfASentence:
                 dependencyArray[1] += shiftValue
                 dependencyArray[2] += shiftValue
+        
 
-        print("Array list after shifting value: ")
-        print(resultArrayList)
+        #print("Array list after shifting value: ")
+        #print(resultArrayList)
 
         # Create the matrix
         numberOfRows = self.numberOfWords * self.batchSize
@@ -237,12 +256,104 @@ class AdjGenerator:
         # print(adjMatrix)
 
         self.inputFile.close()
-        
+        # labelMatrix = torch.from_numpy(labelMatrix)
+        # labelMatrix = self.to_sparse(labelMatrix).long()
 
+        # adjMatrix = torch.from_numpy(adjMatrix)
+        # adjMatrix = self.to_sparse(adjMatrix).long()
+
+        # labelInverseMatrix = torch.from_numpy(labelInverseMatrix)
+        # labelInverseMatrix = self.to_sparse(labelInverseMatrix).long()
+
+        # adjInverseMatrix = torch.from_numpy(adjInverseMatrix)
+        # adjInverseMatrix = self.to_sparse(adjInverseMatrix).long()
+
+        # return labelMatrix.cuda(), adjMatrix.cuda(), labelInverseMatrix.cuda(), adjInverseMatrix.cuda()
         return labelMatrix, adjMatrix, labelInverseMatrix, adjInverseMatrix
+
+
+    def generateDictionaryMapping(self):
+        self.dictionaryFile = open("dictionary.txt", "w")
+        inputFile = open(self.dir_path, "r", encoding="utf8")
+        isNewSentence = True
+
+        count = 0
+        numberOfSentence = 0
+        startOffsetForEachSentence = 0
+        sentenceLength = 0
+        inputFile.seek(0)
+
+        line = inputFile.readline()
+        while (line):
+            if (line in ['\n', '\r\n']):                
+                isNewSentence = True
+                # print("length of prev sentence: ")
+                # print(sentenceLength)
+                length = ':' + str(sentenceLength) + '\n'
+                self.dictionaryFile.write(length)
+                sentenceLength = 0
+            else:  # remove the line delimiter "\n" at the end of this line                
+                line = line.replace("\n", "")                   
+                if (line == '(())'):
+                    numberOfSentence += 1
+                    # print("A sentence > 50")
+                    # print(line)   
+                    sentenceLength = len(line) + 1 # we have remove the \n of this line
+                    # print("length of sentence: ")                    
+                    # print(sentenceLength)                 
+                    offset = str(startOffsetForEachSentence) + ':' + str(sentenceLength) + '\n'
+                    self.dictionaryFile.write(offset)
+                    
+                elif (isNewSentence):                    
+                    sentenceLength = len(line) + 1 # we have remove the \n of this line
+                    numberOfSentence += 1
+                    isNewSentence = False
+                    # print("A sentence")
+                    # print(line)
+                    offset = str(startOffsetForEachSentence)
+                    self.dictionaryFile.write(offset)
+                else:      
+                    sentenceLength += len(line) + 1
+                
+                    
+            startOffsetForEachSentence = inputFile.tell()            
+            inputFile.seek(startOffsetForEachSentence)
+            line = inputFile.readline()
+            # count += 1
+            # if (count > 300):
+            #     break
+
+
+        # inputFile.seek(720)
+        # print("Test: ")
+        # s= inputFile.read(871)
+        # print(s)      
+
+        inputFile.close()
+        # print("Number of sentence")
+        # print(numberOfSentence)
+
+    def test(self):
+        dictionaryFile = open("dictionary.txt", "r", encoding="utf8")
+        inputFile = open("train.en.out", "r", encoding="utf8")
+        outputFile = open("test_dict.txt", "w", encoding="utf8")
+        count = 0
+        for line in dictionaryFile:
+            line = line.strip()            
+            line = line.split(':')            
+            startOffSet = int(line[0])
+            sentenceLength = int(line[1])
+
+            inputFile.seek(startOffSet)
+            s = inputFile.read(sentenceLength) + '\n'
+            outputFile.write(s)
+
+            # count += 1
+            # if (count > 30):
+            #     break
+
         
 adj = AdjGenerator("train.en.out")
-ids = [60,59, 61]
-adj, label, adjinv, labelinv = adj.generateTensorsFromIDs(ids, 50, 3)
-
+# adj.generateDictionaryMapping()
+# adj.test()
         
