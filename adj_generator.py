@@ -1,4 +1,3 @@
-import torch
 import numpy as np
 import os
 
@@ -42,10 +41,10 @@ class AdjGenerator:
         self.numberOfWords = numberOfWords
         self.batchSize = batchSize
 
-        dir_path = os.path.abspath(os.curdir)
-        dir_path = dir_path + '/data-bin' '/tokenized.en-vi/' + self.fileName
-        print(dir_path)
-        self.dir_path = dir_path
+        # dir_path = os.path.abspath(os.curdir)
+        # dir_path = dir_path + '/data-bin' '/tokenized.en-vi/' + self.fileName
+        # print(dir_path)
+        self.dir_path = fileName
 
         # self.inputFile = open(self.fileName, "r", encoding="utf8")
         self.anchorForEachBach = open("AnchorForEachBach.txt", "w")
@@ -70,7 +69,7 @@ class AdjGenerator:
         arrayOfIDs = []
         arrayOfASentence = []
         firstLineOfABatch = True
-        indexOfSentence = -1
+        indexOfSentence = 0
         isSentenceWithRoot = False
         
 
@@ -96,7 +95,8 @@ class AdjGenerator:
             else:  # remove the line delimiter "\n" at the end of this line
                 line = line.replace("\n", "")
 
-            # print(line)
+            if (indexOfSentence in ids):
+                print(line)
 
             if (line == '(())'):
                 if (indexOfSentence in ids):
@@ -237,22 +237,12 @@ class AdjGenerator:
         # print(adjMatrix)
 
         self.inputFile.close()
-        labelMatrix = torch.from_numpy(labelMatrix)
-        labelMatrix = self.to_sparse(labelMatrix).long()
+        
 
-        adjMatrix = torch.from_numpy(adjMatrix)
-        adjMatrix = self.to_sparse(adjMatrix).long()
-
-        labelInverseMatrix = torch.from_numpy(labelInverseMatrix)
-        labelInverseMatrix = self.to_sparse(labelInverseMatrix).long()
-
-        adjInverseMatrix = torch.from_numpy(adjInverseMatrix)
-        adjInverseMatrix = self.to_sparse(adjInverseMatrix).long()
-
-        return labelMatrix.cuda(), adjMatrix.cuda(), labelInverseMatrix.cuda(), adjInverseMatrix.cuda()
+        return labelMatrix, adjMatrix, labelInverseMatrix, adjInverseMatrix
         
 adj = AdjGenerator("train.en.out")
-ids = [59,60, 61]
+ids = [60,59, 61]
 adj, label, adjinv, labelinv = adj.generateTensorsFromIDs(ids, 50, 3)
 
         
