@@ -438,9 +438,7 @@ class DirectedGCN:
         # gates are applied through the adjacency matrix values
 
         # apply sparse dropout
-        print("Inputs: ")
-        print(inputs)
-        print(inputs.size())
+        
         # adj = adj.cuda()
         # labels = labels.cuda()
         # adj_inv = adj_inv.cuda()
@@ -477,10 +475,10 @@ class DirectedGCN:
         h = torch.matmul(inputs2d, self.w)
         
         #h = tf.sparse_tensor_dense_matmul(adj, h)
-        print("adj size:")
-        print(adj.size())
-        print("h size:")
-        print(h.size())
+        # print("adj size:")
+        # print(adj.size())
+        # print("h size:")
+        # print(h.size())
         with torch.no_grad():
             h = torch.sparse.mm(adj, h).cuda()
         #h = torch.spmm(adj, h).cuda()
@@ -491,17 +489,17 @@ class DirectedGCN:
         labels_pad = sparse_fill_empty_rows_V2(labels,0).cuda()
         labels_weights = sparse_fill_empty_rows_V2(adj, 0.).cuda()
         #print(self.b.size())
-        print("Labels _ pad : ")
-        print(labels_pad)
-        print(labels_pad.size())
-        print("Labels _ weigths : ")
-        print(labels_weights)
-        print(labels_weights.size())
+        # print("Labels _ pad : ")
+        # print(labels_pad)
+        # print(labels_pad.size())
+        # print("Labels _ weigths : ")
+        # print(labels_weights)
+        # print(labels_weights.size())
         labels = embedding_lookup_sparse(self.b, labels_pad, labels_weights).cuda()
-        print("Labels: ")
-        print(labels.size())
-        print("b: ")
-        print(self.b.size())
+        # print("Labels: ")
+        # print(labels.size())
+        # print("b: ")
+        # print(self.b.size())
 
         h = h + labels
         h = torch.reshape(h,inputs.size())

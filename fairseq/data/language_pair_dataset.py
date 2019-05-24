@@ -47,6 +47,9 @@ def collate(
     print("Src _ lenghts: ")
     print(src_lengths)
 
+    print("ID: ")
+    print(id)
+
     prev_output_tokens = None
     target = None
     if samples[0].get('target', None) is not None:
@@ -157,8 +160,8 @@ class LanguagePairDataset(FairseqDataset):
             name = 'valid.en.out'
         elif (split == 'test'):
             name = 'test.en.out'
-        self.adj_generator = AdjGenerator.AdjGenerator(name, numberOfWords=50, batchSize=80)
-        self.count = 0
+        self.adj_generator = AdjGenerator.AdjGenerator(name, numberOfWords=50, batchSize=40)
+        self.count = 100
     def __getitem__(self, index):
         index = self.count
         self.count += 1
