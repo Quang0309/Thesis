@@ -61,6 +61,7 @@ class AdjGenerator:
             # print(array)
             self.dictionaryOffsetArray.append(array)
         f.close()
+
         # print(self.dictionaryOffsetArray[0])
         # print(self.dictionaryOffsetArray[1])
         # print(self.dictionaryOffsetArray[2])
@@ -82,9 +83,6 @@ class AdjGenerator:
         self.numberOfWords = numberOfWordsPerSentence
         self.batchSize = batchSize
         arrayList = []
-        
-        firstLineOfABatch = True
-        isSentenceWithRoot = False
 
 
         for id in ids:            
@@ -265,11 +263,15 @@ class AdjGenerator:
                     isNewSentence = False
                     # print("A sentence")
                     # print(line)
+                    # print(" offset: ")
+                    # print(startOffsetForEachSentence)
+                    # print(" sentencelength: ")
+                    # print(sentenceLength)
                     offset = str(startOffsetForEachSentence)
                     self.dictionaryFile.write(offset)
                 else:      
                     sentenceLength += len(line) + 1
-                
+                    
                     
             startOffsetForEachSentence = inputFile.tell()            
             inputFile.seek(startOffsetForEachSentence)
@@ -312,7 +314,7 @@ class AdjGenerator:
         inputFile.seek(startOffset)
         s = inputFile.read(length)
         print(s)
-        # print(self.dictionaryOffsetArray[60])
+        print(len(s))
         inputFile.close()
         return s
     
@@ -330,20 +332,22 @@ class AdjGenerator:
 
         
 adj = AdjGenerator("train.en.out")
+# adj.generateDictionaryMapping()
 # adj.generateTensorsFromIDs([1, 0, 2, 60], 50, 4)
 
-ids = []
-for i in range (50000,50160, 2):
-    ids.append(i)
-adj.generateTensorsFromIDs(ids, 50, 80)
+# ids = []
+# for i in range (50000,50160, 2):
+#     ids.append(i)
+# adj.generateTensorsFromIDs(ids, 50, 80)
 
 
 # adj.readSentence(25405, 19)
 # adj.readSentence(25174,219)
 # adj.readSentence(45822, 5)
-# adj.readSentence(45828, 574)
+
 
 # adj.readSentenceID(145403)
+adj.readSentenceID(202)
 
 # adj.generateDictionaryMapping()
 # adj.test()
