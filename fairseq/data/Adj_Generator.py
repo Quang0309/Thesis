@@ -345,7 +345,7 @@ adj = AdjGenerator("train.en.out")
 # adj.readSentence(25174,219)
 # adj.readSentence(45822, 5)
 # adj.readSentence(45828, 574)
-adj.readSentenceID(101)
+# adj.readSentenceID(101)
 
 # adj.readSentenceID(145403)
 
