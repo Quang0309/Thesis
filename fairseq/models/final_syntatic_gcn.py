@@ -240,7 +240,7 @@ def embedding_lookup_sparse(embeddings, sparse_ids, sparse_weights):
 #     weights = weights.unsqueeze(-1)
 #     print("new weights size: ")
 #     print(weights.size())
-    
+        weights = weights.float()
         embeddings *= weights
         #print(" embeddings after multiplication: ")
         #print(embeddings.size())
@@ -335,6 +335,7 @@ def sparse_fill_empty_rows(t, default_value):
     ten = torch.sparse_coo_tensor(indices.t(), values,t.size())
     return ten
 
+
 def sparse_fill_empty_rows_V2(t, default_value):
     row = t.size()[0]
     indices = t._indices().t()
@@ -342,32 +343,34 @@ def sparse_fill_empty_rows_V2(t, default_value):
     new_indices = []
     new_values = []
     i = 0
-    if(indices[0] is not None):
+    #if(indices[0] is not None):
+    #if not indices:
+    if len(indices != 0):
         while(i!=indices[0][0].item()):
             new_indices.append([i,0])
             new_values.append(default_value)
             i = i+1  
-    for index, item in enumerate(indices):
-        if(item[0].item()==i):
+        for index, item in enumerate(indices):
+            if(item[0].item()==i):
            
-            new_indices.append([item[0].item(),item[1].item()])
-            new_values.append(values[index])         
-        else:
-            i = i + 1
-            while (item[0].item() != i):
-                new_indices.append([i,0])
-                new_values.append(default_value)
-                i = i+1  
-            new_indices.append([item[0].item(),item[1].item()])
-            new_values.append(values[index])          
-    i = i + 1   
+                new_indices.append([item[0].item(),item[1].item()])
+                new_values.append(values[index])         
+            else:
+                i = i + 1
+                while (item[0].item() != i):
+                    new_indices.append([i,0])
+                    new_values.append(default_value)
+                    i = i+1  
+                new_indices.append([item[0].item(),item[1].item()])
+                new_values.append(values[index])          
+        i = i + 1   
     while(i<row):
         new_indices.append([i,0])
         new_values.append(default_value)
         i = i + 1  
     new_indices_tensor = torch.tensor(new_indices)
     ten = torch.sparse_coo_tensor(new_indices_tensor.t(), new_values,t.size())
-    return ten    
+    return ten 
 #71-75
 #h = torch.matmul(inputs2d, self.w)
 #h = torch.sparse.mm(adj, h)

@@ -35,7 +35,7 @@ def collate(
     id = id.index_select(0, sort_order)
     src_tokens = src_tokens.index_select(0, sort_order)
     if(src_tokens.size()[1]>50):
-        src_tokens = src_tokens[:,:50,:]
+        src_tokens = src_tokens[:,:50]
     prev_output_tokens = None
     target = None
     if samples[0].get('target', None) is not None:
@@ -56,10 +56,11 @@ def collate(
         ntokens = sum(len(s['source']) for s in samples)
 
     #print(src_lengths[0].item())
-    print("Here")
-    print(src_lengths)
-    print("id: ")
-    print(id)
+    #print("Here")
+    #print(src_lengths)
+    #print(src_tokens.size()[1])
+    #print("id: ")
+    #print(id)
     adjTensor, labelTensor, adjInverseTensor, labelInverseTensor = adj_generator.generateTensorsFromIDs(id, src_lengths[0].item(),len(id))
     #print(adjTensor)
     
